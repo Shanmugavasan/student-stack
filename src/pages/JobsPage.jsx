@@ -11,6 +11,7 @@ export default function JobsPage() {
       </div>
       <aside className="space-y-6">
         <CvMatcher />
+        {/* Just call it normally. It expands automatically when clicked! */}
         <GpaCalculator />
       </aside>
     </div>

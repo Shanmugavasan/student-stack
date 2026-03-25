@@ -1,16 +1,23 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
+import Footer from './components/Footer'; // <-- 1. Import Footer
 import Home from './pages/Home';
 import JobsPage from './pages/JobsPage';
 import CommunityPage from './pages/CommunityPage';
 import Accommodation from './components/Accommodation';
-import Login from './pages/Login'; // <-- 1. Import the Login Page
+import Login from './pages/Login';
+import DynamicJobPage from './pages/DynamicJobPage';
+import Dashboard from './pages/Dashboard';
+import Privacy from './pages/Privacy';
+import About from './pages/About';
+import Contact from './pages/Contact';
 
 export default function App() {
   return (
     <Router>
-      <div className="bg-gray-50 text-gray-900 font-sans min-h-screen pb-12">
+      {/* 2. Added flex-col and min-h-screen to pin footer to bottom */}
+      <div className="bg-gray-50 text-gray-900 font-sans min-h-screen flex flex-col">
         <Navbar />
 
         {/* Global Search Bar */}
@@ -28,17 +35,24 @@ export default function App() {
           </div>
         </div>
 
-        {/* Router Setup */}
-        <main className="container mx-auto px-4">
+        {/* 3. Changed <main> to flex-grow so it pushes the footer down */}
+        <main className="container mx-auto px-4 flex-grow">
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/jobs" element={<JobsPage />} />
+            <Route path="/jobs/:category/:location" element={<DynamicJobPage />} />
             <Route path="/housing" element={<Accommodation />} />
             <Route path="/community" element={<CommunityPage />} />
-            <Route path="/login" element={<Login />} /> {/* <-- 2. Add the Route */}
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
           </Routes>
         </main>
-        
+
+        {/* 4. Footer stays outside <main> and <Routes> */}
+        <Footer />
       </div>
     </Router>
   );
