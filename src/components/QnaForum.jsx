@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../supabaseClient';
+import { getCurrentUser, fetchAuthSession } from 'aws-amplify/auth';
+
 
 export default function QnaForum() {
   const [newQuestion, setNewQuestion] = useState('');
@@ -31,45 +32,32 @@ export default function QnaForum() {
   };
 
   // 2. Insert the new question directly into the database
-  const handleAsk = async (e) => {
-    e.preventDefault();
-    if (!newQuestion.trim()) return;
+const handleAsk = async (e) => {
+  e.preventDefault();
+  if (!newQuestion.trim()) return;
 
-    // Check if the user is actually logged in
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session) {
-      alert("You need to log in to ask a question!");
-      return;
-    }
+  try {
+    // Check if logged in
+    const user = await getCurrentUser();
+    const { tokens } = await fetchAuthSession();
+    const token = tokens.idToken.toString();
 
-    try {
-      // Push the data to Supabase
-      const { error } = await supabase
-        .from('forum_questions')
-        .insert([
-          { 
-            title: newQuestion, 
-            author_id: session.user.id, 
-            author_name: session.user.email.split('@')[0], 
-            tags: ['New'] 
-          }
-        ]);
+    // Now send to your API Gateway (You will need to create a new Lambda for this)
+    await fetch(`${API_URL}/forum`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ title: newQuestion })
+    });
 
-      if (error) throw error;
-      
-      // Clear the text box
-      setNewQuestion('');
-      
-      // CRITICAL STEP: Instead of just putting it on the screen, 
-      // we tell React to download the fresh list from the database.
-      fetchQuestions(); 
-      
-    } catch (error) {
-      console.error("Error posting question:", error.message);
-      alert("Failed to post. " + error.message);
-    }
-  };
+    setNewQuestion('');
+    fetchQuestions(); // Refresh list
+  } catch (error) {
+    alert("You need to log in to ask a question!");
+  }
+};
 
   return (
     <section id="qna" className="mt-12 max-w-4xl mx-auto">

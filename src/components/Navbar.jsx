@@ -1,26 +1,46 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { supabase } from '../supabaseClient';
+import { getCurrentUser, signOut } from 'aws-amplify/auth';
+import { Hub } from 'aws-amplify/utils';
 
 export default function Navbar() {
   const [session, setSession] = useState(null);
 
-  // Check if user is logged in when the navbar loads
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
+    // 1. Check if user is logged in when the navbar first loads
+    const checkUser = async () => {
+      try {
+        const user = await getCurrentUser();
+        setSession(user);
+      } catch (error) {
+        // getCurrentUser throws an error if no one is logged in, so we catch it and set null
+        setSession(null); 
+      }
+    };
+    
+    checkUser();
+
+    // 2. Listen for global auth changes (like when they log in or out from the AuthBox)
+    const unsubscribe = Hub.listen('auth', ({ payload }) => {
+      switch (payload.event) {
+        case 'signedIn':
+          checkUser();
+          break;
+        case 'signedOut':
+          setSession(null);
+          break;
+      }
     });
 
-    // Listen for changes (like when they log in or out)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
-
-    return () => subscription.unsubscribe();
+    return () => unsubscribe();
   }, []);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
   };
 
   return (

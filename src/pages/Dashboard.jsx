@@ -1,37 +1,59 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../supabaseClient';
 import { useNavigate } from 'react-router-dom';
+import { getCurrentUser, fetchAuthSession } from 'aws-amplify/auth';
+
+// TODO: We will replace this with your real AWS API Gateway URL in the next step
+const API_URL = 'https://64lm64wl72.execute-api.eu-north-1.amazonaws.com';
 
 export default function Dashboard() {
-  const [session, setSession] = useState(null);
+  const [user, setUser] = useState(null);
+  const [jwtToken, setJwtToken] = useState(null);
   const [savedJobs, setSavedJobs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // 1. Check Auth Status First
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) {
-        navigate('/login'); // Kick them out if not logged in
-      } else {
-        setSession(session);
-        fetchSavedJobs(session.user.id);
+    // 1. Check Auth Status via AWS Amplify
+    const checkAuth = async () => {
+      try {
+        const currentUser = await getCurrentUser();
+        // 2. Grab the secure JWT token to send to our Lambda backend
+        const authSession = await fetchAuthSession();
+        const token = authSession.tokens?.idToken?.toString();
+        
+        setUser(currentUser);
+        setJwtToken(token);
+        
+        // 3. Fetch the jobs using the secure token
+        fetchSavedJobs(token);
+      } catch (error) {
+        console.log("No user session found, redirecting to login.");
+        navigate('/login');
       }
-    });
+    };
+    
+    checkAuth();
   }, [navigate]);
 
-  const fetchSavedJobs = async (userId) => {
+  const fetchSavedJobs = async (token) => {
+    setIsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('saved_jobs')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
+      // Sending a request to your API Gateway, passing the Cognito token as the ID badge
+      const response = await fetch(`${API_URL}/jobs`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
 
-      if (error) throw error;
-      setSavedJobs(data || []);
+      if (!response.ok) throw new Error('Failed to fetch jobs');
+      
+      const data = await response.json();
+      setSavedJobs(data.jobs || []);
     } catch (error) {
       console.error("Error loading jobs:", error.message);
+      // Fails silently for now to keep the UI clean if the API isn't built yet
     } finally {
       setIsLoading(false);
     }
@@ -39,26 +61,31 @@ export default function Dashboard() {
 
   const markAsApplied = async (jobId) => {
     try {
-      const { error } = await supabase
-        .from('saved_jobs')
-        .update({ status: 'Applied' })
-        .eq('id', jobId);
+      const response = await fetch(`${API_URL}/jobs/${jobId}/apply`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${jwtToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
         
-      if (error) throw error;
-      fetchSavedJobs(session.user.id); // Refresh the list
+      if (!response.ok) throw new Error('Could not update status');
+      
+      fetchSavedJobs(jwtToken); // Refresh the list
     } catch (error) {
       alert("Could not update status.");
     }
   };
 
-  if (!session) return null; // Prevent flash of content before redirect
+  if (!user) return null; // Prevent flash of content before redirect
 
   return (
     <div className="max-w-4xl mx-auto mt-8 space-y-8">
       
       {/* Welcome Banner */}
       <div className="bg-slate-800 text-white p-8 rounded-2xl shadow-lg">
-        <h1 className="text-3xl font-bold mb-2">Welcome back, {session.user.email.split('@')[0]}!</h1>
+        {/* We use signInDetails.loginId because you used email as the login identifier */}
+        <h1 className="text-3xl font-bold mb-2">Welcome back, {user.signInDetails?.loginId?.split('@')[0] || 'Student'}!</h1>
         <p className="text-slate-300">Track your applications and manage your saved opportunities here.</p>
       </div>
 
