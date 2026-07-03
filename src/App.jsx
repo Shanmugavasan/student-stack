@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
-import Footer from './components/Footer'; // <-- 1. Import Footer
+import Footer from './components/Footer'; 
 import Home from './pages/Home';
 import JobsPage from './pages/JobsPage';
 import CommunityPage from './pages/CommunityPage';
@@ -12,19 +12,25 @@ import Dashboard from './pages/Dashboard';
 import Privacy from './pages/Privacy';
 import About from './pages/About';
 import Contact from './pages/Contact';
-import DropshippingVisa from './pages/community/DropshippingVisa';
-import VisaSponsorship2026 from './pages/community/VisaSponsorship2026';
-import MonzoVsRevolut from './pages/community/MonzoVsRevolut';
-import SearchOverlay from './components/SearchOverlay'; // 2. Import the new component
+
+
+// New Dynamic Blog Pages
+import WriteBlog from './pages/WriteBlog';
+import DynamicBlogPage from './pages/DynamicBlogPage';
+
+import SearchOverlay from './components/SearchOverlay'; 
 import SearchResultsPage from './pages/SearchResultsPage';
+
+import Profile from './pages/Profile';
+
+
+
 
 export default function App() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
-  // Keyboard Shortcut: Pressing '/' opens search
   useEffect(() => {
     const handleKeyDown = (e) => {
-      // Don't trigger if user is already typing in an input
       if (e.key === '/' && document.activeElement.tagName !== 'INPUT' && !isSearchOpen) {
         e.preventDefault();
         setIsSearchOpen(true);
@@ -39,7 +45,7 @@ export default function App() {
       <div className="bg-gray-50 text-gray-900 font-sans min-h-screen flex flex-col">
         <Navbar />
 
-        {/* Global Search Bar (The Trigger) */}
+        {/* Global Search Bar */}
         <div className="bg-white shadow-sm border-b border-gray-100 py-12 mb-8">
           <div className="container mx-auto px-4 text-center">
             <h2 className="text-4xl font-black mb-6 text-gray-900 tracking-tight">Find Your Future Today</h2>
@@ -53,7 +59,6 @@ export default function App() {
               </div>
               <span className="absolute left-6 top-6 text-gray-400 text-xl group-hover:text-blue-600 transition-colors">🔍</span>
               
-              {/* Keyboard Hint */}
               <div className="absolute right-6 top-6 hidden md:block">
                 <span className="text-[10px] font-black text-gray-300 border border-gray-200 px-2 py-1 rounded-lg bg-white shadow-sm">PRESS /</span>
               </div>
@@ -74,9 +79,16 @@ export default function App() {
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/search" element={<SearchResultsPage />} />
-            <Route path="/community/visa-sponsorship-2026" element={<VisaSponsorship2026 />} />
-            <Route path="/community/dropshipping-visa" element={<DropshippingVisa />} />
-            <Route path="/community/monzo-vs-revolut" element={<MonzoVsRevolut />} />
+            
+            {/* Community Routes */}
+            <Route path="/community/write" element={<WriteBlog />} />
+            
+            {/* The Dynamic Route catches everything else (e.g. /community/12345-abc) */}
+            <Route path="/community/:blogId" element={<DynamicBlogPage />} />
+
+            
+// ...
+<Route path="/profile" element={<Profile />} />
           </Routes>
         </main>
 

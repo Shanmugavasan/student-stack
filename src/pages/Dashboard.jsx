@@ -107,7 +107,8 @@ export default function Dashboard() {
         ) : (
           <div className="space-y-4">
             {savedJobs.map(job => (
-              <div key={job.id} className="bg-white p-5 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between shadow-sm border border-gray-100 hover:border-emerald-200 transition">
+              <div key={job.SK} className="bg-white p-5 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between shadow-sm border border-gray-100 hover:border-emerald-200 transition">
+                {/* Using job.SK (or job.id if you saved it) as the key */}
                 <div>
                   <h4 className="font-bold text-gray-800 text-lg">{job.job_title}</h4>
                   <p className="text-sm text-gray-500">{job.company} &bull; {job.location}</p>

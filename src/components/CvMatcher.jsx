@@ -8,8 +8,11 @@ export default function CvMatcher() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [jobDesc, setJobDesc] = useState('Empathic Nurse needed for London clinic. Emergency response and patient care experience required.');
-  const [cvText, setCvText] = useState('Experienced healthcare worker skilled in clinical record keeping and patient care. Looking for a nursing role.');
+  
+  // Updated default text to match your site's vibe
+  const [jobDesc, setJobDesc] = useState('Junior Front-End Developer needed. Must have experience with React, JavaScript, HTML, CSS, and API integration. AWS experience is a plus.');
+  const [cvText, setCvText] = useState('Computer Science student with strong skills in HTML, CSS, and Vanilla JavaScript. Built several personal projects using React and Node.js. Looking for a front-end internship.');
+  
   const [results, setResults] = useState(null);
   const modalRef = useRef(null);
 

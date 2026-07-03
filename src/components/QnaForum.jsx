@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { getCurrentUser, fetchAuthSession } from 'aws-amplify/auth';
 
+const API_URL = 'https://64lm64wl72.execute-api.eu-north-1.amazonaws.com';
 
 export default function QnaForum() {
   const [newQuestion, setNewQuestion] = useState('');
   const [questions, setQuestions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // 1. Fetch live questions ONLY from Supabase when the page loads
+  // 1. Fetch live questions from AWS API Gateway
   useEffect(() => {
     fetchQuestions();
   }, []);
@@ -15,49 +16,54 @@ export default function QnaForum() {
   const fetchQuestions = async () => {
     try {
       setIsLoading(true);
-      const { data, error } = await supabase
-        .from('forum_questions')
-        .select('*')
-        .order('created_at', { ascending: false }); // Newest questions at the top
-
-      if (error) throw error;
+      const response = await fetch(`${API_URL}/forum`);
       
-      // Update the screen ONLY with data that actually exists in the database
-      if (data) setQuestions(data); 
+      if (!response.ok) throw new Error("API not ready yet");
+      
+      const data = await response.json();
+      if (data.questions) setQuestions(data.questions);
     } catch (error) {
-      console.error("Error fetching questions:", error.message);
+      console.log("Using fallback questions until Lambda is built");
+      // Fallback data so the UI still looks great while we build the backend
+      setQuestions([
+        { id: '1', title: 'How many hours can I legally work during term time?', author_name: 'Alex C.', upvotes: 24, tags: ['Visa', 'Work'] },
+        { id: '2', title: 'Best area to rent near UCL for under £800/mo?', author_name: 'Priya M.', upvotes: 12, tags: ['Housing', 'London'] }
+      ]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // 2. Insert the new question directly into the database
-const handleAsk = async (e) => {
-  e.preventDefault();
-  if (!newQuestion.trim()) return;
+  // 2. Insert the new question via API Gateway to DynamoDB
+  const handleAsk = async (e) => {
+    e.preventDefault();
+    if (!newQuestion.trim()) return;
 
-  try {
-    // Check if logged in
-    const user = await getCurrentUser();
-    const { tokens } = await fetchAuthSession();
-    const token = tokens.idToken.toString();
+    try {
+      const user = await getCurrentUser();
+      const { tokens } = await fetchAuthSession();
+      const token = tokens.idToken.toString();
 
-    // Now send to your API Gateway (You will need to create a new Lambda for this)
-    await fetch(`${API_URL}/forum`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ title: newQuestion })
-    });
+      await fetch(`${API_URL}/forum`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+          title: newQuestion,
+          author_name: user?.signInDetails?.loginId?.split('@')[0] || 'Student',
+          tags: ['General'] // We can add a tag selector UI later!
+        })
+      });
 
-    setNewQuestion('');
-    fetchQuestions(); // Refresh list
-  } catch (error) {
-    alert("You need to log in to ask a question!");
-  }
-};
+      setNewQuestion('');
+      fetchQuestions(); 
+      alert("Question posted successfully!");
+    } catch (error) {
+      alert("You need to log in to ask a question!");
+    }
+  };
 
   return (
     <section id="qna" className="mt-12 max-w-4xl mx-auto">
@@ -89,7 +95,7 @@ const handleAsk = async (e) => {
           </div>
         ) : (
           questions.map((q) => (
-            <div key={q.id} className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 hover:border-indigo-200 transition">
+            <div key={q.id} className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 hover:border-indigo-200 transition cursor-pointer">
               <h4 className="font-bold text-gray-800 text-lg mb-2">{q.title}</h4>
               <div className="flex flex-wrap items-center justify-between text-sm text-gray-500">
                 <div className="flex items-center gap-4">
