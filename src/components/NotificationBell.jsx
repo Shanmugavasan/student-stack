@@ -52,13 +52,8 @@ const fetchNotifications = async () => {
 
 const handleNotificationClick = async (notification) => {
     setIsOpen(false);
-
-    // 1. Instantly mark as read in local UI so the red bubble shrinks
-    setNotifications(prev => prev.map(n => 
-      n.id === notification.id ? { ...n, read: true } : n
-    ));
-
-    // 2. Tell the backend to mark it as read
+    setNotifications(prev => prev.map(n => n.id === notification.id ? { ...n, read: true } : n));
+    
     try {
       const { tokens } = await fetchAuthSession();
       fetch(`${API_URL}/notifications/read`, {
@@ -69,15 +64,17 @@ const handleNotificationClick = async (notification) => {
         },
         body: JSON.stringify({ createdAt: notification.createdAt })
       });
-    } catch (e) { console.error("Failed to mark read"); }
+    } catch (e) {}
 
-    // 3. Navigate to the blog, and append the specific comment ID to the URL if it exists
-    const targetUrl = notification.commentId 
-      ? `/community/${notification.blogId}#comment-${notification.commentId}`
-      : `/community/${notification.blogId}`;
-      
+    // THE FIX: Both Blogs and Questions use the generic /community route now!
+    let targetUrl = `/community/${notification.blogId}`;
+    if (notification.commentId) {
+      targetUrl += `#comment-${notification.commentId}`;
+    }
+    
     navigate(targetUrl);
   };
+
 const handleMarkAllRead = async () => {
     // 1. Optimistically clear local UI
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
@@ -118,12 +115,21 @@ const handleMarkAllRead = async () => {
         <div className="absolute right-0 mt-3 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50 text-gray-800 animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="p-4 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
             <span className="font-black text-gray-900">Notifications</span>
-            {unreadCount > 0 && (
-              // Change this:
+            <div className="flex items-center gap-3">
+              {unreadCount > 0 && (
                 <span onClick={handleMarkAllRead} className="text-xs font-bold text-blue-600 cursor-pointer hover:text-blue-800">
-                Mark all read
-              </span>
-            )}
+                  Mark all read
+                </span>
+              )}
+              {/* NEW GEAR ICON */}
+              <button 
+                onClick={() => { setIsOpen(false); navigate('/settings#notifications'); }} 
+                className="text-gray-400 hover:text-gray-800 transition-colors text-lg"
+                title="Notification Settings"
+              >
+                ⚙️
+              </button>
+            </div>
           </div>
           
           <div className="max-h-[400px] overflow-y-auto">

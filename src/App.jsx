@@ -12,6 +12,7 @@ import Dashboard from './pages/Dashboard';
 import Privacy from './pages/Privacy';
 import About from './pages/About';
 import Contact from './pages/Contact';
+import QuestionPage from './pages/QuestionPage';
 
 
 // New Dynamic Blog Pages
@@ -22,6 +23,9 @@ import SearchOverlay from './components/SearchOverlay';
 import SearchResultsPage from './pages/SearchResultsPage';
 
 import Profile from './pages/Profile';
+
+import Settings from './pages/Settings';
+
 
 
 
@@ -75,6 +79,7 @@ export default function App() {
             <Route path="/community" element={<CommunityPage />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/login" element={<Login />} />
+            
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
@@ -85,10 +90,19 @@ export default function App() {
             
             {/* The Dynamic Route catches everything else (e.g. /community/12345-abc) */}
             <Route path="/community/:blogId" element={<DynamicBlogPage />} />
+            
+// ... down in your
+<Route path="/question/:id" element={<QuestionPage />} />
 
             
 // ...
-<Route path="/profile" element={<Profile />} />
+{/* ... other routes ... */}
+            <Route path="/profile" element={<Profile />} />
+            
+            {/* ADD THIS LINE FOR SETTINGS */}
+            <Route path="/settings" element={<Settings />} />
+            
+            
           </Routes>
         </main>
 
